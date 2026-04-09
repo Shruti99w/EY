@@ -1,0 +1,13 @@
+https://www.datacamp.com/tutorial/chromadb-tutorial-step-by-step-guide
+
+https://developers.openai.com/api/docs/guides/embeddings
+
+https://developers.openai.com/api/docs/models/text-embedding-3-large
+
+https://huggingface.co/docs/chat-ui/configuration/embeddings
+
+https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+
+https://www.databricks.com/blog/what-is-retrieval-augmented-generation
+
+https://medium.com/@tejpal.abhyuday/retrieval-augmented-generation-rag-from-basics-to-advanced-a2b068fd576c
