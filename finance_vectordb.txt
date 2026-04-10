@@ -1,0 +1,91 @@
+import pandas as pd
+import numpy as np
+import random
+
+def generate_finance_bigdata(output_path="finance_data_big.csv", n_rows=5_00, seed=42):
+    np.random.seed(seed)
+    random.seed(seed)
+
+    genders = ["Male", "Female"]
+    factors = ["Returns", "Risk", "Locking Period", "Tax Benefits"]
+    objectives = ["Capital Appreciation", "Income", "Growth"]
+    purposes = ["Wealth Creation", "Savings for Future", "Retirement", "Education"]
+    durations = ["<1 year", "1-3 years", "3-5 years", "5+ years"]
+    monitors = ["Daily", "Weekly", "Monthly", "Quarterly"]
+    expects = ["<10%", "10%-20%", "20%-30%", "30%+"]
+    avenues = ["Mutual Fund", "Equity", "Fixed Deposits", "Gold", "PPF"]
+    reasons_equity = ["Capital Appreciation", "Dividend", "High Liquidity"]
+    reasons_mutual = ["Better Returns", "Fund Diversification", "Tax Saving"]
+    reasons_bonds  = ["Safe Investment", "Assured Returns"]
+    reasons_fd     = ["Fixed Returns", "Risk Free"]
+    sources = ["Internet", "Financial Consultant", "Bank RM", "Friends/Family"]
+
+    def rand_score():
+        return np.random.choice(range(1,8), p=[0.05,0.1,0.15,0.2,0.2,0.2,0.1])
+
+    rows = []
+    for _ in range(n_rows):
+        gender = random.choice(genders)
+        age = int(np.clip(np.random.normal(35, 10), 18, 70))
+
+        invest_yes = random.choice(["Yes","No"])
+        stock_yes  = "Yes" if invest_yes=="Yes" and random.random()>0.4 else "No"
+
+        scores = [rand_score() if invest_yes=="Yes" else np.random.randint(1,3) for _ in range(7)]
+        factor   = random.choice(factors)
+        objective= random.choice(objectives)
+        purpose  = random.choice(purposes)
+        duration = random.choice(durations)
+        monitor  = random.choice(monitors)
+        expect   = random.choice(expects)
+        avenue   = random.choice(avenues)
+        savings_obj = random.choice(["Retirement Plan","Education","Health Care","Vacation Fund","Home Purchase"])
+        reason_eq  = random.choice(reasons_equity) if stock_yes=="Yes" else ""
+        reason_mut = random.choice(reasons_mutual) if scores[0]>=3 else ""
+        reason_bon = random.choice(reasons_bonds)  if scores[2]>=3 else ""
+        reason_fd  = random.choice(reasons_fd)     if scores[4]>=3 else ""
+        source     = random.choice(sources)
+
+        rows.append([gender, age, invest_yes, *scores, stock_yes, factor,
+                     objective, purpose, duration, monitor, expect, avenue,
+                     savings_obj, reason_eq, reason_mut, reason_bon, reason_fd,
+                     source])
+
+    columns = ["gender","age","Investment_Avenues","Mutual_Funds","Equity_Market",
+               "Debentures","Government_Bonds","Fixed_Deposits","PPF","Gold",
+               "Stock_Marktet","Factor","Objective","Purpose","Duration",
+               "Invest_Monitor","Expect","Avenue","What are your savings objectives?",
+               "Reason_Equity","Reason_Mutual","Reason_Bonds","Reason_FD","Source"]
+
+    df = pd.DataFrame(rows, columns=columns)
+    df.to_csv(output_path, index=False)
+    print(f"Generated {n_rows:,} rows -> {output_path}")
+
+# Example: generate 5 million rows
+generate_finance_bigdata("finance_data_big.csv", n_rows=5_00)
+!pip install chromadb sentence-transformers pandas
+import pandas as pd
+
+# Load transformed dataset
+df = pd.read_csv("finance_data_big.csv")
+df.head()
+import chromadb
+
+# Initialize persistent ChromaDB client (local folder)
+chroma_client = chromadb.PersistentClient(path="./chroma_retail_db")  # Save your vector DB here
+collection = chroma_client.get_or_create_collection(name="financial_transactions")
+document = []
+
+for i, row in df.iterrows():
+    text =f"""
+    Customer is {row['gender']} and {row['age']} years old.
+    Investment prefernce: {row['Investment_Avenues']}.
+    Objective: {row['Objective']}.
+    Expected return: {row['Expect']}.
+    Preferred avenue: {row['Avenue']}.
+    """
+    document.append(text)
+    from sentence_transformers import  SentenceTransformer
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+embeddings = embedding_model.encode(document)
+print(len(embeddings[0]))
