@@ -75,6 +75,8 @@ import chromadb
 chroma_client = chromadb.PersistentClient(path="./chroma_retail_db")  # Save your vector DB here
 collection = chroma_client.get_or_create_collection(name="financial_transactions")
 document = []
+metadata_list =[]
+ids=[]
 
 for i, row in df.iterrows():
     text =f"""
@@ -85,7 +87,39 @@ for i, row in df.iterrows():
     Preferred avenue: {row['Avenue']}.
     """
     document.append(text)
+
+    metadata= {
+        "age":int(row["age"]),
+        "gender":row["gender"],
+        "avenue":row["Avenue"]
+    }
+    metadata_list.append(metadata)
+    ids.append(str(i))
+
+
+    
     from sentence_transformers import  SentenceTransformer
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 embeddings = embedding_model.encode(document)
 print(len(embeddings[0]))
+collection.add(
+    documents=document,
+    embeddings=embeddings,
+    metadatas=metadata_list,
+    ids=[str(i) for i in range(len(document))]
+)
+query =" low risk investement options"
+query_embedding = embedding_model.encode([query])
+results=collection.query(
+    query_embeddings=query_embedding,
+    n_results=3 
+)
+print(results["documents"])
+print(results["distances"])
+results=collection.query(
+    query_embeddings=query_embedding.tolist(),
+    n_results=3,
+    where= {"age": {"$lt":30}}
+)
+print(results["documents"])
+print(results["metadatas"])
